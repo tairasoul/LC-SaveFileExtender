@@ -5,7 +5,7 @@ using System.Reflection;
 using System;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(SaveFileExtender_LC.SaveFileExtensions), "LC.MoreSaveFiles", "1.0.1", "tairasoul")]
+[assembly: MelonInfo(typeof(SaveFileExtender_LC.SaveFileExtensions), "LC.MoreSaveFiles", "1.1.0", "tairasoul")]
 [assembly: MelonGame("ZeekerssRBLX", "Lethal Company")]
 
 namespace SaveFileExtender_LC
@@ -54,7 +54,7 @@ namespace SaveFileExtender_LC
                 }
             }
         }
-        Rect window = new Rect(1270, 745, 600, 100);
+        Rect window = new Rect(1200, 745, 600, 100);
         bool isInMenu = false;
         bool isInHostMenu = false;
         public override void OnInitializeMelon()
@@ -122,7 +122,7 @@ namespace SaveFileExtender_LC
                             {
                                 int num = ES3.Load<int>("GroupCredits", filePath, 30);
                                 int num2 = ES3.Load<int>("Stats_DaysSpent", filePath, 0);
-                                slot.fileStatsText.text = string.Format("${0}\nDays: {1}", num, num2);
+                                slot.fileStatsText.text = string.Format("${0}\nDays {1}", num, num2);
                             }
                             else
                             {
@@ -168,6 +168,20 @@ namespace SaveFileExtender_LC
                 if (GUILayout.Button("Select slot."))
                 {
                     slot.SetFileToThis();
+                }
+                if (GUILayout.Button("Delete."))
+                {
+                    ES3.DeleteFile($"LCSaveFile{slot.fileNum}");
+                    if (ES3.FileExists($"LCSaveFile{slot.fileNum}"))
+                    {
+                        int num = ES3.Load<int>("GroupCredits", $"LCSaveFile{slot.fileNum}", 30);
+                        int num2 = ES3.Load<int>("Stats_DaysSpent", $"LCSaveFile{slot.fileNum}", 0);
+                        slot.fileStatsText.text = string.Format("${0}\nDay {1}", num, num2);
+                    }
+                    else
+                    {
+                        slot.fileStatsText.text = "";
+                    }
                 }
                 GUILayout.EndHorizontal();
             }
