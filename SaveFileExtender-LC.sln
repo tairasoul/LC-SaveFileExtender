@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.8.34212.112
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SaveFileExtender-LC", "SaveFileExtender-LC.csproj", "{1053A3B7-A3C0-438B-A60B-2620DF22D8CB}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1053A3B7-A3C0-438B-A60B-2620DF22D8CB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1053A3B7-A3C0-438B-A60B-2620DF22D8CB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1053A3B7-A3C0-438B-A60B-2620DF22D8CB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1053A3B7-A3C0-438B-A60B-2620DF22D8CB}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {D10F01D2-8F3F-4BD0-8E60-BB4F86D05ABF}
+	EndGlobalSection
+EndGlobal
