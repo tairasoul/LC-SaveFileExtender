@@ -1,11 +1,11 @@
-﻿using MelonLoader;
+using MelonLoader;
 using HarmonyLib;
 using UnityEngine;
 using System.Reflection;
 using System;
 using System.Linq;
 
-[assembly: MelonInfo(typeof(SaveFileExtender_LC.SaveFileExtensions), "LC.MoreSaveFiles", "1.0.0", "tairasoul")]
+[assembly: MelonInfo(typeof(SaveFileExtender_LC.SaveFileExtensions), "LC.MoreSaveFiles", "1.0.1", "tairasoul")]
 [assembly: MelonGame("ZeekerssRBLX", "Lethal Company")]
 
 namespace SaveFileExtender_LC
@@ -14,9 +14,10 @@ namespace SaveFileExtender_LC
     {
         public static MelonLogger.Instance Logger;
         public static GameObject[] CustomSaveFiles = Array.Empty<GameObject>();
-        [HarmonyPatch(typeof(MenuManager), "Start")]
+        [HarmonyPatch(typeof(MenuManager))]
         class MenuPatch
         {
+            [HarmonyPatch("Start")]
             [HarmonyFinalizer]
             public static void Finalizer(MenuManager __instance)
             {
@@ -41,17 +42,18 @@ namespace SaveFileExtender_LC
                     }
                 }
             }
-        }
-        /*
-        class SaveFiles
-        {
 
-            GameObject files;
-            public SaveFiles(GameObject FilesPanel)
+            [HarmonyPatch("Awake")]
+            [HarmonyPostfix]
+            public static void Postfix(MenuManager __instance)
             {
-                files = FilesPanel;
+                __instance.filesCompatible = new bool[8];
+                for (int i = 0; i < __instance.filesCompatible.Length; i++)
+                {
+                    __instance.filesCompatible[i] = true;
+                }
             }
-        }*/
+        }
         Rect window = new Rect(1270, 745, 600, 100);
         bool isInMenu = false;
         bool isInHostMenu = false;
@@ -59,7 +61,7 @@ namespace SaveFileExtender_LC
         {
             Logger = LoggerInstance;
             LoggerInstance.Msg("Patching MenuManager.");
-            HarmonyInstance.PatchAll();
+            HarmonyInstance.PatchAll(typeof(MenuPatch));
             base.OnInitializeMelon();
         }
 
@@ -74,69 +76,77 @@ namespace SaveFileExtender_LC
 
         public override void OnUpdate()
         {
-            if (isInMenu)
-            {
-                try
-                {
-                    MenuManager manager = GameObject.FindFirstObjectByType<MenuManager>();
-                    isInHostMenu = manager.HostSettingsScreen.activeSelf;
-                    if (manager != null && GameObject.Find("LobbyHostSettings") != null && GameObject.Find("LobbyHostSettings").activeSelf)
-                    {
-                        try
-                        {
-                            FilesPanel = GameObject.Find("FilesPanel");
-                            File1 = FilesPanel.transform.Find("File1").gameObject;
-                        }
-                        catch { }
-                    }
-                }
-                catch { }
-            }
             try
             {
-                if (GameObject.Find("LobbyHostSettings") != null && GameObject.Find("LobbyHostSettings").activeSelf && FilesPanel != null && File1 != null)
-                for (int i = 4; i < 9; i++)
+                MenuManager manager = GameObject.FindFirstObjectByType<MenuManager>();
+                isInHostMenu = manager.HostSettingsScreen.activeSelf;
+                if (manager != null && GameObject.Find("Canvas").transform.Find("MenuContainer").Find("LobbyHostSettings") != null)
                 {
-                    string filePath = $"LCSaveFile{i}";
-                    string ChildName = $"File{i}";
-                    if (FilesPanel.transform.Find(ChildName) == null)
+                    try
                     {
-                        Logger.Msg($"Creating file {ChildName}");
-                        GameObject newFile = GameObject.Instantiate(File1);
-                        newFile.transform.SetParent(FilesPanel.transform);
-                        newFile.name = ChildName;
-                        CustomSaveFiles = CustomSaveFiles.Append(newFile).ToArray();
-                        SaveFileUISlot slot = newFile.GetComponent<SaveFileUISlot>();
-                        slot.fileNum = i - 1;
-                        FieldInfo fileStringField = typeof(SaveFileUISlot).GetField("fileString", BindingFlags.NonPublic | BindingFlags.Instance);
-                        if (fileStringField != null)
-                        {
-                            Logger.Msg($"fileStringField isn't null, setting to LCSaveFile{i}");
-                            fileStringField.SetValue(slot, filePath);
-                        }
-                        if (ES3.FileExists(filePath))
-                        {
-                            int num = ES3.Load<int>("GroupCredits", filePath, 30);
-                            int num2 = ES3.Load<int>("Stats_DaysSpent", filePath, 0);
-                            slot.fileStatsText.text = string.Format("${0}\nDays: {1}", num, num2);
-                        }
-                        else
-                        {
-                            slot.fileStatsText.text = "";
-                        }
-                        try
-                        {
-                            if (!GameObject.FindObjectOfType<MenuManager>().filesCompatible[slot.fileNum])
-                            {
-                                slot.fileNotCompatibleAlert.enabled = true;
-                            }
-                        }
-                        catch { }
+                        FilesPanel = GameObject.Find("Canvas").transform.Find("MenuContainer").Find("LobbyHostSettings").Find("FilesPanel").gameObject;
+                        File1 = FilesPanel.transform.Find("File1").gameObject;
                     }
+                    catch { }
                 }
             }
             catch { }
-            base.OnUpdate();
+            if (isInHostMenu)
+            {
+                foreach (SaveFileUISlot saveFile in FilesPanel.GetComponentsInChildren<SaveFileUISlot>())
+                {
+                    if (saveFile.fileNum == GameNetworkManager.Instance.saveFileNum) saveFile.SetFileToThis();
+                }
+            }
+            try
+            {
+                CustomSaveFiles = Array.Empty<GameObject>();
+                if (FilesPanel != null && File1 != null)
+                    for (int i = 4; i < 9; i++)
+                    {
+                        string filePath = $"LCSaveFile{i}";
+                        string ChildName = $"File{i}";
+                        if (FilesPanel.transform.Find(ChildName) == null)
+                        {
+                            Logger.Msg($"Creating file {ChildName}");
+                            GameObject newFile = GameObject.Instantiate(File1);
+                            SaveFileUISlot slot = newFile.GetComponent<SaveFileUISlot>();
+                            slot.fileNum = i - 1;
+                            FieldInfo fileStringField = typeof(SaveFileUISlot).GetField("fileString", BindingFlags.NonPublic | BindingFlags.Instance);
+                            if (fileStringField != null)
+                            {
+                                Logger.Msg($"fileStringField isn't null, setting to LCSaveFile{i}");
+                                fileStringField.SetValue(slot, filePath);
+                            }
+                            if (ES3.FileExists(filePath))
+                            {
+                                int num = ES3.Load<int>("GroupCredits", filePath, 30);
+                                int num2 = ES3.Load<int>("Stats_DaysSpent", filePath, 0);
+                                slot.fileStatsText.text = string.Format("${0}\nDays: {1}", num, num2);
+                            }
+                            else
+                            {
+                                slot.fileStatsText.text = "";
+                            }
+                            try
+                            {
+                                if (!GameObject.FindObjectOfType<MenuManager>().filesCompatible[slot.fileNum])
+                                {
+                                    slot.fileNotCompatibleAlert.enabled = true;
+                                }
+                            }
+                            catch { }
+                            newFile.transform.SetParent(FilesPanel.transform);
+                            newFile.name = ChildName;
+                            CustomSaveFiles = CustomSaveFiles.Append(newFile).ToArray();
+                        }
+                        else
+                        {
+                            CustomSaveFiles = CustomSaveFiles.Append(FilesPanel.transform.Find(ChildName).gameObject).ToArray();
+                        }
+                    }
+            }
+            catch { }
         }
 
         public override void OnGUI()
